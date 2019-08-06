@@ -3,19 +3,19 @@
 # PLEASE EDIT NEXT LINES TO DEFINE YOUR OWN CONFIGURATION
 
 # Name of the log file
-LOGNAME="kupiki_hotspot.log"
+LOGNAME="hotspot.log"
 # Path where the logfile will be stored
 # be sure to add a / at the end of the path
 LOGPATH="/var/log/"
 # Password for user root (MySql/MariaDB not system)
 MYSQL_PASSWORD="pihotspot"
 # Name of the hotspot that will be visible for users/customers
-HOTSPOT_NAME="kupikihotspot"
+HOTSPOT_NAME="BipSUWifiHotspot"
 # IP of the hotspot
 HOTSPOT_IP="192.168.10.1"
 # Wi-fi code country. Use above link to find yours
 # https://www.cisco.com/c/en/us/td/docs/wireless/wcs/3-2/configuration/guide/wcscfg32/wcscod.html
-WIFI_COUNTRY_CODE="FR"
+WIFI_COUNTRY_CODE="PH"
 # Use HTTPS to connect to web portal
 # Set value to Y or N
 HOTSPOT_HTTPS="N"
@@ -41,7 +41,7 @@ CERT_DAYS="730"
 AVAHI_INSTALL="Y"
 # Install Daloradius Portal (compatible with FR2 only in theory)
 # Set value to Y or N
-DALORADIUS_INSTALL="Y"
+DALORADIUS_INSTALL="N"
 # Enable/Disable Bluetooth
 # Set value to Y or N
 BLUETOOTH_ENABLED="N"
@@ -59,7 +59,7 @@ NETFLOW_ENABLED="Y"
 NETFLOW_LOGS_DAYS="365d"
 # Enable/Disable MAC authentication
 # Set value to Y or N
-MAC_AUTHENTICATION_ENABLED="N"
+MAC_AUTHENTICATION_ENABLED="Y"
 # Password for MAC authentication. Could/Should be changed within the web administration interface
 MAC_AUTHENTICATION_PASSWORD="123456"
 # Install web frontend of Kupiki Hotspot
@@ -67,13 +67,13 @@ MAC_AUTHENTICATION_PASSWORD="123456"
 INSTALL_KUPIKI_ADMIN=N
 # Install Cron job for the hotspot updater. Will be executed every sunday at 8am (system time)
 # Set value to Y or N
-ADD_CRON_UPDATER=Y
+ADD_CRON_UPDATER=N
 # Install additional counters
 # Set value to Y or N
 KUPIKI_SQL_COUNTERS=Y
 # Allow users to register in the Portal
 # Set value to Y or N
-KUPIKI_ALLOW_REGISTER=Y
+KUPIKI_ALLOW_REGISTER=N
 
 # *************************************
 #
@@ -103,7 +103,7 @@ KUPIKI_SQL_COUNTERS_URL="https://raw.githubusercontent.com/pihomeserver/Kupiki-H
 # Daloradius URL
 DALORADIUS_ARCHIVE="https://github.com/lirantal/daloradius.git"
 # Captive Portal URL
-HOTSPOTPORTAL_ARCHIVE="https://github.com/Kupiki/Kupiki-Hotspot-Portal.git"
+HOTSPOTPORTAL_ARCHIVE="https://github.com/kwaknet01/RFID-Wifi-Hotspot-Portal.git"
 # Captive Portal URL
 HOTSPOTPORTAL_BACKEND_ARCHIVE="https://github.com/Kupiki/Kupiki-Hotspot-Portal-Backend.git"
 # Kupiki Admin Web UI URL
@@ -1138,13 +1138,13 @@ fi
 
 if [[ -d "/etc/ssh" ]]; then
     display_message "Create banner on login"
-    /usr/bin/figlet -f lean -c "Kupiki Hotspot" | tr ' _/' ' /' > /etc/ssh/kupiki-banner
+    /usr/bin/figlet -f lean -c "RFID Wifi Hotspot" | tr ' _/' ' /' > /etc/ssh/kupiki-banner
     check_returned_code $?
 
     display_message "Append script version to the banner"
     echo "
 
-    Kupiki Hotspot - Version $KUPIKI_VERSION - (c) www.pihomeserver.fr
+    BipSu RFID Wifi Hotspot - (c) Alexander Dan Baring
 
     " >> /etc/ssh/kupiki-banner
     check_returned_code $?
