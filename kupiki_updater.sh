@@ -59,7 +59,7 @@ NETFLOW_ENABLED="Y"
 NETFLOW_LOGS_DAYS="365d"
 # Enable/Disable MAC authentication
 # Set value to Y or N
-MAC_AUTHENTICATION_ENABLED="N"
+MAC_AUTHENTICATION_ENABLED="Y"
 # Password for MAC authentication. Could/Should be changed within the web administration interface
 MAC_AUTHENTICATION_PASSWORD="123456"
 # Install web frontend of Kupiki Hotspot
