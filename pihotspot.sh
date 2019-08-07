@@ -73,7 +73,7 @@ ADD_CRON_UPDATER=N
 KUPIKI_SQL_COUNTERS=Y
 # Allow users to register in the Portal
 # Set value to Y or N
-KUPIKI_ALLOW_REGISTER=N
+KUPIKI_ALLOW_REGISTER=Y
 
 # *************************************
 #
