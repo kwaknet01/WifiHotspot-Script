@@ -828,7 +828,7 @@ HS_WANIF=$WAN_INTERFACE
 HS_NETWORK=$HOTSPOT_NETWORK
 HS_NETMASK=255.255.255.0
 HS_UAMLISTEN=$HOTSPOT_IP
-HS_NASID="BipSUWifiHotspot"
+HS_NASID="KUPIKI"
 HS_RADIUS=localhost
 HS_RADIUS2=localhost
 HS_RADSECRET=$FREERADIUS_SECRETKEY
@@ -1144,7 +1144,7 @@ if [[ -d "/etc/ssh" ]]; then
     display_message "Append script version to the banner"
     echo "
 
-    				BipSU RFID Wifi Hotspot - (c) Alexander Dan Baring
+    BipSu RFID Wifi Hotspot - (c) Alexander Dan Baring
 
     " >> /etc/ssh/kupiki-banner
     check_returned_code $?
