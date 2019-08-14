@@ -105,7 +105,7 @@ DALORADIUS_ARCHIVE="https://github.com/lirantal/daloradius.git"
 # Captive Portal URL
 HOTSPOTPORTAL_ARCHIVE="https://github.com/kwaknet01/RFID-Wifi-Hotspot-Portal.git"
 # Captive Portal URL
-HOTSPOTPORTAL_BACKEND_ARCHIVE="https://github.com/Kupiki/Kupiki-Hotspot-Portal-Backend.git"
+HOTSPOTPORTAL_BACKEND_ARCHIVE="https://github.com/kwaknet01/Portal-Backend.git"
 # Kupiki Admin Web UI URL
 KUPIKI_WEBUI_ARCHIVE="https://github.com/Kupiki/Kupiki-Hotspot-Admin-Install.git"
 # Haserl URL
