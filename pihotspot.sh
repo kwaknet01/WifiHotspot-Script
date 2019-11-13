@@ -41,7 +41,7 @@ CERT_DAYS="730"
 AVAHI_INSTALL="Y"
 # Install Daloradius Portal (compatible with FR2 only in theory)
 # Set value to Y or N
-DALORADIUS_INSTALL="N"
+DALORADIUS_INSTALL="Y"
 # Enable/Disable Bluetooth
 # Set value to Y or N
 BLUETOOTH_ENABLED="N"
@@ -828,7 +828,7 @@ HS_WANIF=$WAN_INTERFACE
 HS_NETWORK=$HOTSPOT_NETWORK
 HS_NETMASK=255.255.255.0
 HS_UAMLISTEN=$HOTSPOT_IP
-HS_NASID="KUPIKI"
+HS_NASID="BipSUWifiHotspot"
 HS_RADIUS=localhost
 HS_RADIUS2=localhost
 HS_RADSECRET=$FREERADIUS_SECRETKEY
@@ -1045,7 +1045,7 @@ check_returned_code $?
 display_message "Adding portal backend in systemd startup"
 echo "
 [Unit]
-Description=Kupiki Portal Backend container
+Description=WifiHotspot Portal Backend container
 Requires=docker.service
 After=docker.service
 
@@ -1144,7 +1144,7 @@ if [[ -d "/etc/ssh" ]]; then
     display_message "Append script version to the banner"
     echo "
 
-    BipSu RFID Wifi Hotspot - (c) Alexander Dan Baring
+    BipSU RFID Wifi Hotspot - (c) Alexander Dan Baring
 
     " >> /etc/ssh/kupiki-banner
     check_returned_code $?
