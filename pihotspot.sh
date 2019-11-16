@@ -3,19 +3,19 @@
 # PLEASE EDIT NEXT LINES TO DEFINE YOUR OWN CONFIGURATION
 
 # Name of the log file
-LOGNAME="hotspot.log"
+LOGNAME="kupiki_hotspot.log"
 # Path where the logfile will be stored
 # be sure to add a / at the end of the path
 LOGPATH="/var/log/"
 # Password for user root (MySql/MariaDB not system)
 MYSQL_PASSWORD="pihotspot"
 # Name of the hotspot that will be visible for users/customers
-HOTSPOT_NAME="BipSUWifiHotspot"
+HOTSPOT_NAME="kupikihotspot"
 # IP of the hotspot
 HOTSPOT_IP="192.168.10.1"
 # Wi-fi code country. Use above link to find yours
 # https://www.cisco.com/c/en/us/td/docs/wireless/wcs/3-2/configuration/guide/wcscfg32/wcscod.html
-WIFI_COUNTRY_CODE="PH"
+WIFI_COUNTRY_CODE="FR"
 # Use HTTPS to connect to web portal
 # Set value to Y or N
 HOTSPOT_HTTPS="N"
@@ -59,7 +59,7 @@ NETFLOW_ENABLED="Y"
 NETFLOW_LOGS_DAYS="365d"
 # Enable/Disable MAC authentication
 # Set value to Y or N
-MAC_AUTHENTICATION_ENABLED="Y"
+MAC_AUTHENTICATION_ENABLED="N"
 # Password for MAC authentication. Could/Should be changed within the web administration interface
 MAC_AUTHENTICATION_PASSWORD="123456"
 # Install web frontend of Kupiki Hotspot
@@ -67,7 +67,7 @@ MAC_AUTHENTICATION_PASSWORD="123456"
 INSTALL_KUPIKI_ADMIN=N
 # Install Cron job for the hotspot updater. Will be executed every sunday at 8am (system time)
 # Set value to Y or N
-ADD_CRON_UPDATER=N
+ADD_CRON_UPDATER=Y
 # Install additional counters
 # Set value to Y or N
 KUPIKI_SQL_COUNTERS=Y
@@ -82,7 +82,7 @@ KUPIKI_ALLOW_REGISTER=Y
 # *************************************
 
 # Current script version
-KUPIKI_VERSION="2.1.2"
+KUPIKI_VERSION="2.1.3"
 # Updater location
 KUPIKI_UPDATER_ARCHIVE="https://raw.githubusercontent.com/pihomeserver/Kupiki-Hotspot-Script/master/kupiki_updater.sh"
 # Default Portal port
@@ -94,6 +94,8 @@ if [ "$HOTSPOT_HTTPS" = "Y" ]; then
     HOTSPOT_PROTOCOL="https:\/\/"
 fi
 
+# Minimal version for Debian
+DEBIAN_MINIMAL_VERSION=9.0
 # Default version of MariaDB
 MARIADB_VERSION='10.1'
 # CoovaChilli GIT URL
@@ -103,9 +105,9 @@ KUPIKI_SQL_COUNTERS_URL="https://raw.githubusercontent.com/pihomeserver/Kupiki-H
 # Daloradius URL
 DALORADIUS_ARCHIVE="https://github.com/lirantal/daloradius.git"
 # Captive Portal URL
-HOTSPOTPORTAL_ARCHIVE="https://github.com/kwaknet01/RFID-Wifi-Hotspot-Portal.git"
+HOTSPOTPORTAL_ARCHIVE="https://github.com/Kupiki/Kupiki-Hotspot-Portal.git"
 # Captive Portal URL
-HOTSPOTPORTAL_BACKEND_ARCHIVE="https://github.com/kwaknet01/Portal-Backend.git"
+HOTSPOTPORTAL_BACKEND_ARCHIVE="https://github.com/Kupiki/Kupiki-Hotspot-Portal-Backend.git"
 # Kupiki Admin Web UI URL
 KUPIKI_WEBUI_ARCHIVE="https://github.com/Kupiki/Kupiki-Hotspot-Admin-Install.git"
 # Haserl URL
@@ -352,7 +354,8 @@ package_check_install() {
 
 PIHOTSPOT_DEPS_START=( apt-transport-https localepurge git wget )
 PIHOTSPOT_DEPS_WIFI=( apt-utils firmware-brcm80211 firmware-ralink firmware-realtek )
-PIHOTSPOT_DEPS=( build-essential grep whiptail debconf-utils nfdump figlet git fail2ban hostapd php-mysql php-pear php-gd php-db php-fpm libgd-dev libpcrecpp0v5 libxpm4 nginx debhelper libssl-dev libcurl4-gnutls-dev mariadb-server freeradius freeradius-mysql gcc make pkg-config iptables haserl libjson-c-dev gengetopt devscripts libtool bash-completion autoconf automake libffi-dev python python-pip jq)
+#PIHOTSPOT_DEPS=( build-essential grep whiptail debconf-utils nfdump figlet git fail2ban hostapd php-mysql php-pear php-gd php-db php-fpm libgd-dev libpcrecpp0v5 libxpm4 nginx debhelper libssl-dev libcurl4-gnutls-dev mariadb-server freeradius freeradius-mysql gcc make pkg-config iptables haserl libjson-c-dev gengetopt devscripts libtool bash-completion autoconf automake libffi-dev python python-pip jq)
+PIHOTSPOT_DEPS=( build-essential grep whiptail debconf-utils nfdump figlet git fail2ban hostapd php-mysql php-pear php-gd php-db php-fpm libgd-dev libpcrecpp0v5 libxpm4 nginx debhelper libssl-dev libcurl4-gnutls-dev mariadb-server freeradius freeradius-mysql gcc make pkg-config iptables haserl libjson-c-dev gengetopt devscripts libtool bash-completion autoconf automake libffi-dev python python-pip jq docker docker-compose)
 
 install_dependent_packages() {
 
@@ -434,6 +437,8 @@ check_previous_execution() {
     fi
 }
 
+version_gt() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
+
 check_root
 
 check_previous_execution
@@ -465,10 +470,10 @@ else
 	exit 1;
 fi
 
-DEBIAN_VERSION=`cat /etc/*-release | grep VERSION_ID | awk -F= '{print $2}' | sed -e 's/^"//' -e 's/"$//'`
-if [[ $DEBIAN_VERSION -ne 9 ]];then
+DEBIAN_VERSION=`cat /etc/debian_version`
+if version_gt $DEBIAN_MINIMAL_VERSION $DEBIAN_VERSION; then
 	display_message ""
-	display_message "This script is used to get installed on Raspbian Stretch Lite"
+	display_message "This script is used to get installed on Raspbian Lite (9+)"
 	display_message ""
 	exit 1
 fi
@@ -552,12 +557,12 @@ display_message "Correct configuration for Collectd daemon"
 sed -i "s/^FQDNLookup true$/FQDNLookup false/g" /etc/collectd/collectd.conf
 check_returned_code $?
 
-type docker 2> /dev/null
-if [ $? -ne 0 ]; then
-    display_message "Install Docker"
-    curl -fsSL get.docker.com -o get-docker.sh && sh get-docker.sh
-    check_returned_code $?
-fi
+# type docker 2> /dev/null
+# if [ $? -ne 0 ]; then
+#     display_message "Install Docker"
+#     curl -fsSL get.docker.com -o get-docker.sh && sh get-docker.sh
+#     check_returned_code $?
+# fi
 
 id -u kupiki > /dev/null
 if [ $? -ne 0 ]; then
@@ -584,12 +589,12 @@ display_message "Install pika module"
 pip install pika
 check_returned_code $?
 
-type docker-compose 2> /dev/null
-if [ $? -ne 0 ]; then
-    display_message "Install docker-compose"
-    pip install docker-compose~=1.23.0
-    check_returned_code $?
-fi
+# type docker-compose 2> /dev/null
+# if [ $? -ne 0 ]; then
+#     display_message "Install docker-compose"
+#     pip install docker-compose~=1.23.0
+#     check_returned_code $?
+# fi
 
 if [[ "$NETFLOW_ENABLED" = "Y" ]]; then
     DEBIAN_FRONTEND=noninteractive apt-get install -y --allow-remove-essential --allow-change-held-packages fprobe nfdump
@@ -828,7 +833,7 @@ HS_WANIF=$WAN_INTERFACE
 HS_NETWORK=$HOTSPOT_NETWORK
 HS_NETMASK=255.255.255.0
 HS_UAMLISTEN=$HOTSPOT_IP
-HS_NASID="BipSUWifiHotspot"
+HS_NASID="KUPIKI"
 HS_RADIUS=localhost
 HS_RADIUS2=localhost
 HS_RADSECRET=$FREERADIUS_SECRETKEY
@@ -921,7 +926,8 @@ if [[ "$DALORADIUS_INSTALL" = "Y" ]]; then
     sed -i "s/\$configValues\['CONFIG_DB_PASS'\] = '';/\$configValues\['CONFIG_DB_PASS'\] = 'radpass';/g" /usr/share/nginx/html/daloradius/library/daloradius.conf.php
     check_returned_code $?
     display_message "Configuring daloradius DB proxy configuration file"
-    sed -i "s/\$configValues\['CONFIG_FILE_RADIUS_PROXY'\] = '\/etc\/freeradius\/proxy.conf';/\$configValues\['CONFIG_FILE_RADIUS_PROXY'\] = '\/etc\/freeradius\/3.0\/proxy.conf';/g" /usr/share/nginx/html/daloradius/library/daloradius.conf.php    check_returned_code $?
+    sed -i "s/\$configValues\['CONFIG_FILE_RADIUS_PROXY'\] = '\/etc\/freeradius\/proxy.conf';/\$configValues\['CONFIG_FILE_RADIUS_PROXY'\] = '\/etc\/freeradius\/3.0\/proxy.conf';/g" /usr/share/nginx/html/daloradius/library/daloradius.conf.php
+    check_returned_code $?
     display_message "Configuring daloradius DB proxy path"
     sed -i "s/\$configValues\['CONFIG_PATH_DALO_VARIABLE_DATA'\] = '\/var\/www\/daloradius\/var';/\$configValues\['CONFIG_PATH_DALO_VARIABLE_DATA'\] = '\/usr\/share\/ngin\/html\/daloradius\/var';/g" /usr/share/nginx/html/daloradius/library/daloradius.conf.php
     check_returned_code $?
@@ -1038,6 +1044,7 @@ check_returned_code $?
 execute_command "chown -R kupiki:kupiki /home/kupiki/kupiki-portal-backend"
 
 display_message "Build the Docker image of Portal backend"
+#su - kupiki -c "cd /home/kupiki/kupiki-portal-backend && /usr/local/bin/docker-compose build"
 su - kupiki -c "cd /home/kupiki/kupiki-portal-backend && /usr/local/bin/docker-compose build"
 check_returned_code $?
 
@@ -1045,7 +1052,7 @@ check_returned_code $?
 display_message "Adding portal backend in systemd startup"
 echo "
 [Unit]
-Description=WifiHotspot Portal Backend container
+Description=Kupiki Portal Backend container
 Requires=docker.service
 After=docker.service
 
@@ -1138,13 +1145,13 @@ fi
 
 if [[ -d "/etc/ssh" ]]; then
     display_message "Create banner on login"
-    /usr/bin/figlet -f lean -c "RFID Wifi Hotspot" | tr ' _/' ' /' > /etc/ssh/kupiki-banner
+    /usr/bin/figlet -f lean -c "Kupiki Hotspot" | tr ' _/' ' /' > /etc/ssh/kupiki-banner
     check_returned_code $?
 
     display_message "Append script version to the banner"
     echo "
 
-    BipSU RFID Wifi Hotspot - (c) Alexander Dan Baring
+    Kupiki Hotspot - Version $KUPIKI_VERSION - (c) www.pihomeserver.fr
 
     " >> /etc/ssh/kupiki-banner
     check_returned_code $?
