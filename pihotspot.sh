@@ -3,19 +3,19 @@
 # PLEASE EDIT NEXT LINES TO DEFINE YOUR OWN CONFIGURATION
 
 # Name of the log file
-LOGNAME="kupiki_hotspot.log"
+LOGNAME="wifihotspot.log"
 # Path where the logfile will be stored
 # be sure to add a / at the end of the path
 LOGPATH="/var/log/"
 # Password for user root (MySql/MariaDB not system)
 MYSQL_PASSWORD="pihotspot"
 # Name of the hotspot that will be visible for users/customers
-HOTSPOT_NAME="kupikihotspot"
+HOTSPOT_NAME="BipSUWifiHotspot"
 # IP of the hotspot
 HOTSPOT_IP="192.168.10.1"
 # Wi-fi code country. Use above link to find yours
 # https://www.cisco.com/c/en/us/td/docs/wireless/wcs/3-2/configuration/guide/wcscfg32/wcscod.html
-WIFI_COUNTRY_CODE="FR"
+WIFI_COUNTRY_CODE="PH"
 # Use HTTPS to connect to web portal
 # Set value to Y or N
 HOTSPOT_HTTPS="N"
@@ -59,7 +59,7 @@ NETFLOW_ENABLED="Y"
 NETFLOW_LOGS_DAYS="365d"
 # Enable/Disable MAC authentication
 # Set value to Y or N
-MAC_AUTHENTICATION_ENABLED="N"
+MAC_AUTHENTICATION_ENABLED="Y"
 # Password for MAC authentication. Could/Should be changed within the web administration interface
 MAC_AUTHENTICATION_PASSWORD="123456"
 # Install web frontend of Kupiki Hotspot
@@ -67,13 +67,10 @@ MAC_AUTHENTICATION_PASSWORD="123456"
 INSTALL_KUPIKI_ADMIN=N
 # Install Cron job for the hotspot updater. Will be executed every sunday at 8am (system time)
 # Set value to Y or N
-ADD_CRON_UPDATER=Y
+ADD_CRON_UPDATER=N
 # Install additional counters
 # Set value to Y or N
 KUPIKI_SQL_COUNTERS=Y
-# Allow users to register in the Portal
-# Set value to Y or N
-KUPIKI_ALLOW_REGISTER=Y
 
 # *************************************
 #
@@ -82,7 +79,7 @@ KUPIKI_ALLOW_REGISTER=Y
 # *************************************
 
 # Current script version
-KUPIKI_VERSION="2.1.1"
+KUPIKI_VERSION="bipsuwifihotspot"
 # Updater location
 KUPIKI_UPDATER_ARCHIVE="https://raw.githubusercontent.com/pihomeserver/Kupiki-Hotspot-Script/master/kupiki_updater.sh"
 # Default Portal port
@@ -103,9 +100,7 @@ KUPIKI_SQL_COUNTERS_URL="https://raw.githubusercontent.com/pihomeserver/Kupiki-H
 # Daloradius URL
 DALORADIUS_ARCHIVE="https://github.com/lirantal/daloradius.git"
 # Captive Portal URL
-HOTSPOTPORTAL_ARCHIVE="https://github.com/Kupiki/Kupiki-Hotspot-Portal.git"
-# Captive Portal URL
-HOTSPOTPORTAL_BACKEND_ARCHIVE="https://github.com/Kupiki/Kupiki-Hotspot-Portal-Backend.git"
+HOTSPOTPORTAL_ARCHIVE="https://github.com/kwaknet01/RFID-Wifi-Hotspot-Portal"
 # Kupiki Admin Web UI URL
 KUPIKI_WEBUI_ARCHIVE="https://github.com/Kupiki/Kupiki-Hotspot-Admin-Install.git"
 # Haserl URL
@@ -319,8 +314,6 @@ download_all_sources() {
 
   execute_command "cd /usr/src/ && rm -rf portal && git clone $HOTSPOTPORTAL_ARCHIVE portal" true "Cloning Pi Hotspot portal project"
 
-  execute_command "cd /usr/src/ && rm -rf kupiki-portal-backend && git clone $HOTSPOTPORTAL_BACKEND_ARCHIVE kupiki-portal-backend" true "Cloning Pi Hotspot portal backend project"
-
 }
 
 secure_system() {
@@ -352,7 +345,8 @@ package_check_install() {
 
 PIHOTSPOT_DEPS_START=( apt-transport-https localepurge git wget )
 PIHOTSPOT_DEPS_WIFI=( apt-utils firmware-brcm80211 firmware-ralink firmware-realtek )
-PIHOTSPOT_DEPS=( build-essential grep whiptail debconf-utils nfdump figlet git fail2ban hostapd php-mysql php-pear php-gd php-db php-fpm libgd-dev libpcrecpp0v5 libxpm4 nginx debhelper libssl-dev libcurl4-gnutls-dev mariadb-server freeradius freeradius-mysql gcc make pkg-config iptables haserl libjson-c-dev gengetopt devscripts libtool bash-completion autoconf automake libffi-dev python python-pip )
+#PIHOTSPOT_DEPS=( wget build-essential grep whiptail debconf-utils nfdump figlet git fail2ban hostapd php-mysql php-pear php-gd php-db php-fpm libgd2-xpm-dev libpcrecpp0v5 libxpm4 nginx debhelper libssl-dev libcurl4-gnutls-dev mariadb-server freeradius freeradius-mysql gcc make libnl1 libnl-dev pkg-config iptables haserl libjson-c-dev gengetopt devscripts libtool bash-completion autoconf automake )
+PIHOTSPOT_DEPS=( build-essential grep whiptail debconf-utils nfdump figlet git fail2ban hostapd php-mysql php-pear php-gd php-db php-fpm libgd-dev libpcrecpp0v5 libxpm4 nginx debhelper libssl-dev libcurl4-gnutls-dev mariadb-server freeradius freeradius-mysql gcc make pkg-config iptables haserl libjson-c-dev gengetopt devscripts libtool bash-completion autoconf automake )
 
 install_dependent_packages() {
 
@@ -547,45 +541,6 @@ if [[ "$AVAHI_INSTALL" = "Y" ]]; then
 fi
 
 install_dependent_packages PIHOTSPOT_DEPS[@]
-
-display_message "Correct configuration for Collectd daemon"
-sed -i "s/^FQDNLookup true$/FQDNLookup false/g" /etc/collectd/collectd.conf
-check_returned_code $?
-
-type docker 2> /dev/null
-if [ $? -ne 0 ]; then
-    display_message "Install Docker"
-    curl -fsSL get.docker.com -o get-docker.sh && sh get-docker.sh
-    check_returned_code $?
-fi
-
-id -u kupiki > /dev/null
-if [ $? -ne 0 ]; then
-    display_message "Create dedicated user kupiki"
-    adduser --disabled-password --gecos "" kupiki
-    check_returned_code $?
-fi
-
-grep -q -E "^docker:" /etc/group
-if [ $? -ne 0 ]; then
-    display_message "Create Docker user group"
-    groupadd -f docker
-    check_returned_code $?
-fi
-
-id kupiki | grep docker > /dev/null
-if [ $? -ne 0 ]; then
-    display_message "Add user kupiki to docker group"
-    gpasswd -a kupiki docker
-    check_returned_code $?
-fi
-
-type docker-compose 2> /dev/null
-if [ $? -ne 0 ]; then
-    display_message "Install docker-compose"
-    pip install docker-compose
-    check_returned_code $?
-fi
 
 if [[ "$NETFLOW_ENABLED" = "Y" ]]; then
     DEBIAN_FRONTEND=noninteractive apt-get install -y --allow-remove-essential --allow-change-held-packages fprobe nfdump
@@ -787,6 +742,7 @@ execute_command "/etc/init.d/networking restart" true "Restarting network servic
 
 execute_command "cd /usr/src/coova-chilli && dpkg-buildpackage -us -uc" true "Building CoovaChilli package"
 
+#execute_command "cd /usr/src && dpkg --force-depends -i coova-chilli_*_armhf.deb" true "Installing CoovaChilli package"
 execute_command "cd /usr/src && dpkg --force-depends -i coova-chilli_*_*.deb" true "Installing CoovaChilli package"
 
 display_message "Configuring CoovaChilli up action"
@@ -806,15 +762,15 @@ sed -i 's/START_CHILLI=0/START_CHILLI=1/g' /etc/default/chilli
 check_returned_code $?
 
 display_message "Creating CoovaChilli at /etc/chilli/config"
-#execute_command "touch /etc/chilli/config" false "Creating CoovaChilli at /etc/chilli/config"
-#if [[ $COMMAND_RESULT -ne 0 ]]; then
+touch /etc/chilli/config
+check_returned_code $?
 cat <<EOF > /etc/chilli/config
 HS_LANIF=$LAN_INTERFACE
 HS_WANIF=$WAN_INTERFACE
 HS_NETWORK=$HOTSPOT_NETWORK
 HS_NETMASK=255.255.255.0
 HS_UAMLISTEN=$HOTSPOT_IP
-HS_NASID="KUPIKI"
+HS_NASID="BIPSUWIFIHOTSPOT"
 HS_RADIUS=localhost
 HS_RADIUS2=localhost
 HS_RADSECRET=$FREERADIUS_SECRETKEY
@@ -827,13 +783,12 @@ HS_TYPE=chillispot
 HS_LOC_NAME=$HOTSPOT_NAME
 HS_LAN_ACCESS=off
 HS_SSID=$HOTSPOT_NAME
-HS_TCP_PORTS="5000 80"
+HS_TCP_PORTS=80
 HS_COAPORT=3799
 HS_MACAUTH=off
 HS_MACPASSWD=
 HS_UAMDOMAINS=
 EOF
-#fi
 check_returned_code $?
 
 if [[ "$MAC_AUTHENTICATION_ENABLED" = "Y" ]]; then
@@ -925,7 +880,7 @@ if [[ "$DALORADIUS_INSTALL" = "Y" ]]; then
 
             location ~ \.php$ {
                 include snippets/fastcgi-php.conf;
-                fastcgi_pass unix:/var/run/php/php7.0-fpm.sock;
+                fastcgi_pass unix:/var/run/php/php7.3-fpm.sock;
             }
     }' > /etc/nginx/sites-available/default
     check_returned_code $?
@@ -961,7 +916,7 @@ server {
 
        	location ~ \.php\$ {
        		include snippets/fastcgi-php.conf;
-       		fastcgi_pass unix:/var/run/php/php7.0-fpm.sock;
+       		fastcgi_pass unix:/var/run/php/php7.3-fpm.sock;
        	}
 }" > /etc/nginx/sites-available/portal
 else
@@ -981,7 +936,7 @@ server {
 
        	location ~ \.php\$ {
        		include snippets/fastcgi-php.conf;
-       		fastcgi_pass unix:/var/run/php/php7.0-fpm.sock;
+       		fastcgi_pass unix:/var/run/php/php7.3-fpm.sock;
        	}
 }" > /etc/nginx/sites-available/portal
 fi
@@ -991,56 +946,11 @@ execute_command "ln -sfT /etc/nginx/sites-available/portal /etc/nginx/sites-enab
 
 execute_command "cp -Rf /usr/src/portal /usr/share/nginx/" true "Installing the portal in Nginx folder"
 
-display_message "Updating Captive Portal configuration file"
+display_message "Updating Captive Portal file"
 sed -i "/XXXXXX/s/XXXXXX/$HOTSPOT_IP/g" /usr/share/nginx/portal/js/configuration.json
 check_returned_code $?
 
 execute_command "nginx -t" true "Checking Nginx configuration file"
-
-execute_command "cp -Rf /usr/src/kupiki-portal-backend /home/kupiki/" true "Installing the portal backend in the user kupiki home folder"
-
-display_message "Updating Captive Portal backend configuration file"
-sed -i "/pihotspot/s/pihotspot/$MYSQL_PASSWORD/g" /home/kupiki/kupiki-portal-backend/app/src/config.json
-check_returned_code $?
-
-execute_command "chown -R kupiki:kupiki /home/kupiki/kupiki-portal-backend"
-
-display_message "Build the Docker image of Portal backend"
-su - kupiki -c "cd /home/kupiki/kupiki-portal-backend && /usr/local/bin/docker-compose build"
-check_returned_code $?
-
-# Make startup of docker compose as a service (after Docker)
-display_message "Adding portal backend in systemd startup"
-echo "
-[Unit]
-Description=Kupiki Portal Backend container
-Requires=docker.service
-After=docker.service
-
-[Service]
-#Restart=always
-Type=oneshot
-RemainAfterExit=yes
-WorkingDirectory=/home/kupiki/kupiki-portal-backend
-ExecStart=/usr/local/bin/docker-compose up -d
-ExecStop=/usr/local/bin/docker-compose stop
-
-[Install]
-WantedBy=default.target
-" > /etc/systemd/system/kupiki-portal-backend.service
-
-display_message "Disabling Portal backend service"
-/bin/systemctl disable kupiki-portal-backend.service
-check_returned_code $?
-
-if [ "$KUPIKI_ALLOW_REGISTER" = "Y" ]; then
-    display_message "Activating Portal backend service"
-    /bin/systemctl enable kupiki-portal-backend.service
-    check_returned_code $?
-    display_message "Starting Kupiki Portal Backend service"
-    /bin/systemctl start kupiki-portal-backend
-    check_returned_code $?
-fi
 
 display_message "Adding Freeradius in systemd startup"
 echo "
@@ -1062,16 +972,20 @@ SysVStartPriority=99
 WantedBy=multi-user.target
 " > /etc/systemd/system/freeradius.service
 check_returned_code $?
-display_message "Activating Freeradius service"
 /bin/systemctl enable freeradius.service
 check_returned_code $?
 
-display_message "Creating fail2ban local configuration"
-cp /etc/fail2ban/fail2ban.conf /etc/fail2ban/fail2ban.local
+display_message "Correct configuration for Collectd daemon"
+sed -i "s/^FQDNLookup true$/FQDNLookup false/g" /etc/collectd/collectd.conf
 check_returned_code $?
 
-display_message "Configuring fail2ban jail rules"
-cat > /etc/fail2ban/jail.local << EOT
+if [[ "$FAIL2BAN_ENABLED" = "Y" ]]; then
+    display_message "Creating fail2ban local configuration"
+    cp /etc/fail2ban/fail2ban.conf /etc/fail2ban/fail2ban.local
+    check_returned_code $?
+
+    display_message "Configuring fail2ban jail rules"
+    cat > /etc/fail2ban/jail.local << EOT
 [DEFAULT]
 ignoreip = 127.0.0.1
 bantime  = 600
@@ -1088,28 +1002,20 @@ maxretry = 3
 
 EOT
 
-display_message "Reloading fail2ban local configuration"
-/usr/bin/fail2ban-client reload
-check_returned_code $?
-
-if [[ "$FAIL2BAN_ENABLED" = "N" ]]; then
-    display_message "Disable fail2ban service"
-    /bin/systemctl disable fail2ban.service
-    check_returned_code $?
-    display_message "Stopping fail2ban service"
-    /bin/systemctl stop fail2ban.service
+    display_message "Reloading fail2ban local configuration"
+    /usr/bin/fail2ban-client reload
     check_returned_code $?
 fi
 
 if [[ -d "/etc/ssh" ]]; then
     display_message "Create banner on login"
-    /usr/bin/figlet -f lean -c "Kupiki Hotspot" | tr ' _/' ' /' > /etc/ssh/kupiki-banner
+    /usr/bin/figlet -f lean -c "WIFI HOTSPOT" | tr ' _/' ' /' > /etc/ssh/kupiki-banner
     check_returned_code $?
 
     display_message "Append script version to the banner"
     echo "
 
-    Kupiki Hotspot - Version $KUPIKI_VERSION - (c) www.pihomeserver.fr
+		   BIPSU RFID WIFI HOTSPOT - Alexander Dan Baring, Orly Gallosa
 
     " >> /etc/ssh/kupiki-banner
     check_returned_code $?
@@ -1157,7 +1063,7 @@ if [[ "$INSTALL_KUPIKI_ADMIN" = "Y" ]]; then
     check_returned_code $?
 
     display_message "Installing the WEB UI"
-    chmod +x install_kupiki_admin.sh && ./install_kupiki_admin.sh
+    chmod +x install_kupiki_admin.sh && ./install_kupiki_admin.sh 
     check_returned_code $?
 fi
 
@@ -1165,16 +1071,6 @@ execute_command "service freeradius start" true "Starting freeradius service"
 
 execute_command "service nginx reload" true "Restarting Nginx"
 
-display_message "Checking if service hostapd is masked"
-/bin/systemctl list-unit-files | grep ^hostapd.service | grep masked
-if [[ $? -eq 0 ]]; then
-    display_message "Unmasking hostapd service"
-    /bin/systemctl unmask hostapd.service
-    check_returned_code $?
-    display_message "Enable hostapd service"
-    /bin/systemctl enable hostapd.service
-    check_returned_code $?
-fi
 execute_command "service hostapd restart" true "Restarting hostapd"
 
 execute_command "service chilli start" true "Starting CoovaChilli service"
@@ -1191,7 +1087,7 @@ execute_command "sleep 15 && ifconfig -a | grep tun0" false "Checking if interfa
 if [[ $COMMAND_RESULT -ne 0 ]]; then
     display_message "*** Warning ***"
     display_message "Unable to find chilli interface tun0"
-    display_message "Try to restart chilli or reboot and check if tun0 interface is available (use 'ifconfig -a' as root)"
+    display_message "Try to restart chilli and check if tun0 interface is available (use 'ifconfig -a')"
     # Do not exit to display connection information
     #exit 1
 fi
